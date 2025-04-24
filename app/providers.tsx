@@ -1,31 +1,34 @@
+// providers/Providers.tsx
 "use client";
-
-import type { ThemeProviderProps } from "next-themes";
 
 import * as React from "react";
 import { HeroUIProvider } from "@heroui/system";
 import { useRouter } from "next/navigation";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from "next-themes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export interface ProvidersProps {
   children: React.ReactNode;
   themeProps?: ThemeProviderProps;
 }
 
-declare module "@react-types/shared" {
-  interface RouterConfig {
-    routerOptions: NonNullable<
-      Parameters<ReturnType<typeof useRouter>["push"]>[1]
-    >;
-  }
-}
+const queryClient = new QueryClient();
 
 export function Providers({ children, themeProps }: ProvidersProps) {
   const router = useRouter();
 
+  const navigate = React.useCallback(
+    (url: string, options?: object) => {
+      router.push(url, options as any);
+    },
+    [router]
+  );
+
   return (
-    <HeroUIProvider navigate={router.push}>
-      <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
-    </HeroUIProvider>
+    <QueryClientProvider client={queryClient}>
+      <HeroUIProvider navigate={navigate}>
+        <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
+      </HeroUIProvider>
+    </QueryClientProvider>
   );
 }
