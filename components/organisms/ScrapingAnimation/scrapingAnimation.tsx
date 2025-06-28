@@ -198,193 +198,122 @@ const ScrapingAnimation: React.FC<ScrapingAnimationProps> = React.memo(({
       {/* Grid pattern */}
       <div 
         className="absolute inset-0" 
-        style={{ 
+        style={{
           backgroundImage: `
-            linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px), 
-            linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px)
+            linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)
           `,
-          backgroundSize: '40px 40px'
-        }} 
+          backgroundSize: '50px 50px'
+        }}
       />
       
-      {/* Main content */}
-      <div className="relative max-w-3xl w-full px-6 z-10">
-        {/* Status indicator */}
-      
-        
-        {/* Title */}
-        <div className="mb-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-2 tracking-tight">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-indigo-200">
-              Finding Your Perfect Flight
-            </span>
-          </h2>
-          <p className="text-blue-200">Searching across multiple airlines to get you the best deals</p>
+      {/* Main content container */}
+      <div className="relative z-10 text-center max-w-2xl mx-auto px-6">
+        {/* Progress indicator */}
+        <div className="mb-8">
+          <div className="relative w-64 h-2 bg-gray-700 rounded-full mx-auto overflow-hidden">
+            <div 
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse" />
+          </div>
+          <p className="text-white/80 text-sm mt-2">{Math.round(progress)}% Complete</p>
         </div>
-        
-        {/* Enhanced Flight Path Animation */}
-        <div className="relative h-40 mb-6">
-          {/* Particles */}
+
+        {/* Status messages */}
+        <div className="mb-6">
+          {animationPhase === 'initializing' && (
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-white">Initializing Flight Search</h2>
+              <p className="text-blue-200">Setting up search parameters...</p>
+            </div>
+          )}
+          
+          {animationPhase === 'searching' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center space-x-4">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${currentAirlineIcon.bgClass} flex items-center justify-center text-white font-bold text-sm`}>
+                  {currentAirlineIcon.code}
+                </div>
+                <div className="text-left">
+                  <h2 className="text-xl font-semibold text-white">Searching {currentAirline}</h2>
+                  <p className="text-blue-200 text-sm">Found {flightCount} flights so far</p>
+                </div>
+              </div>
+              
+              {nextAirline && currentAirlineIndex < airlines.length - 1 && (
+                <div className="text-xs text-gray-400">
+                  Next: {nextAirline}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {animationPhase === 'finalizing' && (
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-white">Finalizing Results</h2>
+              <p className="text-blue-200">Processing and organizing flight data...</p>
+            </div>
+          )}
+        </div>
+
+        {/* Animated flight path */}
+        <div className="relative w-80 h-40 mx-auto mb-6">
+          <svg className="w-full h-full" viewBox="0 0 320 160">
+            <path
+              ref={pathRef}
+              d="M 20 80 Q 80 20 160 80 T 300 80"
+              stroke="rgba(59, 130, 246, 0.3)"
+              strokeWidth="2"
+              fill="none"
+              strokeDasharray="5,5"
+              className="animate-pulse"
+            />
+            
+            {/* Animated airplane */}
+            <g
+              transform={`translate(${planePosition.x}, ${planePosition.y}) rotate(${planePosition.rotate})`}
+              className="transition-transform duration-100"
+            >
+              <path
+                d="M -8 0 L 8 0 L 4 -4 L 0 -8 L -4 -4 Z"
+                fill="#3B82F6"
+                className="drop-shadow-lg"
+              />
+            </g>
+          </svg>
+        </div>
+
+        {/* Floating particles during search */}
+        {animationPhase === 'searching' && (
           <div className="absolute inset-0 pointer-events-none">
-            {particlesRef.current.map(particle => (
-              <div 
+            {particlesRef.current.map((particle) => (
+              <div
                 key={particle.id}
-                className="absolute bg-blue-400 rounded-full opacity-80"
+                className="absolute bg-blue-400 rounded-full animate-bounce opacity-60"
                 style={{
                   width: `${particle.size}px`,
                   height: `${particle.size}px`,
                   left: particle.x,
                   top: particle.y,
-                  animation: `float ${particle.animationDuration} ease-in-out infinite alternate, pulse 2s ease-in-out infinite alternate`,
-                  animationDelay: particle.delay
+                  animationDuration: particle.animationDuration,
+                  animationDelay: particle.delay,
                 }}
               />
             ))}
           </div>
-          
-          {/* Flight path */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-            {/* Cloud elements */}
-            <ellipse cx="15" cy="15" rx="5" ry="3" fill="rgba(255,255,255,0.1)" />
-            <ellipse cx="70" cy="10" rx="8" ry="4" fill="rgba(255,255,255,0.1)" />
-            <ellipse cx="40" cy="20" rx="6" ry="3" fill="rgba(255,255,255,0.1)" />
-            <ellipse cx="85" cy="25" rx="7" ry="3" fill="rgba(255,255,255,0.1)" />
-            
-            {/* Curved path */}
-            <path 
-              ref={pathRef}
-              d="M 5,20 C 20,30 35,10 50,20 S 80,30 95,15" 
-              fill="none" 
-              stroke="rgba(148, 163, 184, 0.2)" 
-              strokeWidth="0.5" 
-              strokeDasharray="1 1" 
-            />
-            
-            {/* Flight markers */}
-            <circle cx="5" cy="20" r="1" fill="#60a5fa" />
-            <circle cx="95" cy="15" r="1" fill="#60a5fa" />
-          </svg>
+        )}
 
-          {/* Airplane */}
-          <div 
-            className="absolute"
-            style={{ 
-              left: `${planePosition.x}%`, 
-              top: `${planePosition.y}px`, 
-              transform: `translate(-50%, -50%) rotate(${planePosition.rotate}deg)`,
-              transition: 'left 0.3s ease-out, top 0.3s ease-out, transform 0.5s ease-out'
-            }}
-          >
-            <div className="relative">
-              <svg className="w-12 h-12 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M21,16V14L13,9V3.5A1.5,1.5,0,0,0,11.5,2h0A1.5,1.5,0,0,0,10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5Z" />
-              </svg>
-              <div className="absolute -bottom-2 left-0 right-0 flex justify-center">
-                <div className="relative w-6 h-12 overflow-hidden">
-                  <div className="absolute top-0 w-full flex flex-col items-center">
-                    <div className="w-2 h-2 rounded-full bg-blue-300 animate-ping" />
-                    <div className="w-1 h-8 bg-gradient-to-b from-blue-300 to-transparent mt-1" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Current airline */}
-        <div className="bg-white bg-opacity-5 backdrop-filter backdrop-blur-sm rounded-xl p-6 border border-blue-900 border-opacity-30 mb-4 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-white flex items-center">
-              <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-              </svg>
-              Currently searching:
-            </h3>
-           
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center p-1 bg-gradient-to-br from-blue-400 to-indigo-600 shadow-md">
-              <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-blue-900">
-                {currentAirline && (
-                  <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${currentAirlineIcon.bgClass} flex items-center justify-center`}>
-                    <span className="text-white text-xs font-bold">{currentAirlineIcon.code}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div>
-              <p className="text-white font-medium text-lg">{currentAirline}</p>
-              <p className="text-blue-200 text-sm">
-               
-                {animationPhase === 'finalizing' && 'Finalizing search results'}
-                {animationPhase === 'complete' && 'Search complete'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Next airline to search */}
-        <div className="bg-white bg-opacity-5 backdrop-filter backdrop-blur-sm rounded-xl p-6 border border-blue-900 border-opacity-30 shadow-lg mb-4">
-          <h3 className="text-lg font-medium text-white mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Next search:
-          </h3>
-          <div className="flex items-center space-x-3 bg-white bg-opacity-5 rounded-lg p-3 border border-blue-900 border-opacity-20">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center p-1 bg-gradient-to-br from-purple-600 to-purple-800 shadow-md">
-              <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-purple-900">
-                <span className="text-white text-xs font-bold">EM</span>
-              </div>
-            </div>
-            <div>
-              <span className="text-white font-medium">Emirates</span>
-              <div className="text-xs text-blue-200 mt-1">
-                Premium airline with connections worldwide
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Information panel */}
-        <div className="bg-white bg-opacity-5 backdrop-filter backdrop-blur-sm rounded-xl p-4 border border-blue-900 border-opacity-30 shadow-lg">
-          <div className="flex items-center text-xs text-blue-200">
-            <svg className="w-4 h-4 mr-1 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Searching across multiple airlines to find the best deals for your trip
-          </div>
-        </div>
-
-        {/* Loading dots */}
-        <div className="mt-10 flex justify-center">
-          <div className="flex space-x-3">
-            {[0, 200, 400].map(delay => (
-              <div 
-                key={delay}
-                className="w-3 h-3 rounded-full bg-blue-300 animate-bounce" 
-                style={{ animationDelay: `${delay}ms` }} 
-              />
-            ))}
-          </div>
+        {/* Loading spinner */}
+        <div className="flex justify-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
-      
-      {/* Animation styles */}
-      <style jsx>{`
-        @keyframes float {
-          0% { transform: translateY(0px); }
-          100% { transform: translateY(-20px); }
-        }
-        
-        @keyframes pulse {
-          0% { opacity: 0.3; }
-          100% { opacity: 0.8; }
-        }
-      `}</style>
     </div>
   );
 });
+
+ScrapingAnimation.displayName = 'ScrapingAnimation';
 
 export default ScrapingAnimation;

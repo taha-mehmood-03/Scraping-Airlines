@@ -1,5 +1,6 @@
 import axios from "axios";
-import { Flights } from "@/store/reducers/flightsSlice";
+import { Flights } from "./Flightsapi";
+
 interface ScrapeFlightParams {
   from: string;
   to: string;
@@ -8,16 +9,38 @@ interface ScrapeFlightParams {
   travelClass: string;
 }
 
-export const StoringFlightsapi = async (params: ScrapeFlightParams, formattedFlights: Flights[]): Promise<void> => {
+export const StoringFlightapi = async (
+  params: {
+    from: string;
+    to: string;
+    departureDate: string;
+    returnDate?: string;
+    travelClass: string;
+  },
+  flights: any[]
+): Promise<void> => {
   try {
-    console.log("Formatted Flights to Store:", formattedFlights);
+    console.log("Formatted Flights to Store:", flights);
 
-    const storeResponse = await axios.post("http://localhost:5000/api/flights/storing", {
-      ...params,
-      flights: formattedFlights,
+    const response = await fetch('/api/flights', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...params,
+        flights,
+      }),
     });
 
-    console.log("Stored Flights Response:", storeResponse.data);
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Stored Flights Response:", data);
+    return data;
+
   } catch (error) {
     console.error("Error storing data", error);
     throw error;

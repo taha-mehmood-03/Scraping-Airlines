@@ -1,6 +1,6 @@
 import axios from "axios";
 import parseFlightData from "@/utils/parseFlightData";
-import { StoringFlightsapi } from "./StoringFlightapi";
+import { StoringFlightapi } from "./StoringFlightapi";
 
 
 export interface Flights {
@@ -29,43 +29,57 @@ interface ScrapeFlightsResponse {
   emirates: any[];  // Or EmiratesFlight[]
 }
 
-export const fetchFlights = async (params: ScrapeFlightParams): Promise<void> => {
+
+
+export const fetchFlights = async (
+  params: ScrapeFlightParams
+): Promise<{ qatar: Flights[]; emirates: Flights[] }> => {
   try {
-    // ✅ Single request now
-    const response = await axios.get<ScrapeFlightsResponse>("http://localhost:5000/api/scraping/scrape-flights", { params });
+    // Using fetch instead of axios for Next.js optimization
+    const queryParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== undefined)
+    );
+    const queryString = new URLSearchParams(queryParams as Record<string, string>).toString();
+    const response = await fetch(`/api/scrape-flights?${queryString}`);
 
-    const qatarRawFlights = response.data.qatar || [];
-    const emiratesFlights = response.data.emirates || [];
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
 
-    // ✅ Parse and format Qatar flights
-    const formattedQatarFlights: Flights[] = qatarRawFlights
+    const { qatar: qatarRawFlights, emirates: emiratesFlights } = 
+      await response.json() as ScrapeFlightsResponse;
+
+    // Process Qatar flights
+    const formattedQatarFlights = qatarRawFlights
       .map(parseFlightData)
       .filter((flight): flight is Flights => flight !== null);
 
-    if (formattedQatarFlights.length > 0) {
-      console.log("formattedQatarFlights",formattedQatarFlights)
-      await StoringFlightsapi(params, formattedQatarFlights); // Store Qatar
-    } else {
-      console.log("No valid Qatar flight data to store.");
-    }
+    // Process Emirates flights (assuming they don't need parsing)
+    const formattedEmiratesFlights = emiratesFlights
+      .filter(flight => flight !== null);
 
-    // ✅ Format Emirates flights
-    console.log("emiratesFlights",emiratesFlights)
+    // Store flights in parallel
+    await Promise.all([
+      formattedQatarFlights.length > 0 && StoringFlightapi(params, formattedQatarFlights),
+      formattedEmiratesFlights.length > 0 && StoringFlightapi(params, formattedEmiratesFlights)
+    ]);
 
-  
-    if (emiratesFlights.length > 0) {
-      await StoringFlightsapi(params, emiratesFlights);
-      console.log("emiratesFlights",emiratesFlights) // Store Emirates
-    } else {
-      console.log("No valid Emirates flight data to store.");
-      console.log("emiratesFlights",emiratesFlights)
-    }
+    console.log('Successfully stored flights:', {
+      qatar: formattedQatarFlights.length,
+      emirates: formattedEmiratesFlights.length
+    });
 
-    // // ✅ Always fetch from DB after storing
-    // dispatch(fetchdbFlights(params));
+    return {
+      qatar: formattedQatarFlights,
+      emirates: formattedEmiratesFlights
+    };
 
   } catch (error) {
-    console.error("Error fetching scraped data", error);
-    throw error;
+    console.error('Error in fetchFlights:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Failed to fetch and process flights'
+    );
   }
 };

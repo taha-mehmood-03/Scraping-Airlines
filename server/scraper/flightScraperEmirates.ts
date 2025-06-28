@@ -23,7 +23,7 @@ export const scrapeFlightDataEmirates = async (params: ScrapeFlightParams): Prom
     console.log("🔗 Navigating to:", url);
 
     browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",

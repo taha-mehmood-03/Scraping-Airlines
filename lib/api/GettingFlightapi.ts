@@ -1,6 +1,5 @@
-import axios from "axios";
 import { FlightResult } from "@/hooks/useFlightsQuery";
-// Define the API response structure
+
 interface FlightApiResponse {
   success: boolean;
   data: FlightResult[];
@@ -12,22 +11,27 @@ export const GettingFlightsapi = async (
   to: string,
   departureDate: string,
   travelClass: string
-): Promise<FlightApiResponse>=> {  // Return the whole response structure
+): Promise<FlightApiResponse> => {
   try {
-    const response = await axios.get<FlightApiResponse>("http://localhost:5000/api/flights", {
-      params: {
-        from,
-        to,
-        departureDate,
-        travelClass,
-      },
-    });
+    const query = new URLSearchParams({
+      from,
+      to,
+      departureDate,
+      travelClass
+    }).toString();
+
+    const response = await fetch(`/api/flights?${query}`);
     
-    console.log("Got the Flights Response:", response.data);
-    
-    return response.data;  // Return the whole response object
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Got the Flights Response:", data);
+    return data;
+
   } catch (error) {
     console.error("Error getting data", error);
     throw error;
   }
-}
+};

@@ -1,4 +1,4 @@
-import { Flights } from "@/store/reducers/flightsSlice";
+import { Flights } from "@/lib/api/Flightsapi";
 
 const parseFlightData = (rawData: string): Flights | null => {
   console.log("Attempting to parse:", rawData);

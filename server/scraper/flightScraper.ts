@@ -24,7 +24,7 @@ export const scrapeFlightData = async ({
     
   try {
     console.log("Launching Puppeteer...");
-    const browser = await puppeteer.launch({ headless: true, devtools: true });
+    const browser = await puppeteer.launch({ headless: false, devtools: true });
     const page = await browser.newPage();
     
     // Safely extract airport codes
